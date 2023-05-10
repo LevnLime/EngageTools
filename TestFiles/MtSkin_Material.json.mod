@@ -1,0 +1,413 @@
+{
+  "m_Name": "MtSkin.001",
+  "m_Shader": {
+    "m_FileID": 1,
+    "m_PathID": -3637526271425215770
+  },
+  "m_ShaderKeywords": "_NORMALMAP _S_KEY_BUMP_ATTENUATION _S_KEY_STANDARD_SKIN",
+  "m_LightmapFlags": 4,
+  "m_EnableInstancingVariants": false,
+  "m_DoubleSidedGI": false,
+  "m_CustomRenderQueue": 2000,
+  "stringTagMap": {
+    "Array": [
+      {
+        "first": "RenderType",
+        "second": "Opaque"
+      }
+    ]
+  },
+  "disabledShaderPasses": {
+    "Array": []
+  },
+  "m_SavedProperties": {
+    "m_TexEnvs": {
+      "Array": [
+        {
+          "first": "_BaseMap",
+          "second": {
+            "m_Texture": {
+              "m_FileID": 0,
+              "m_PathID": 6788584797164572948
+            },
+            "m_Scale": {
+              "x": 1.0,
+              "y": 1.0
+            },
+            "m_Offset": {
+              "x": 0.0,
+              "y": 0.0
+            }
+          }
+        },
+        {
+          "first": "_BumpMap",
+          "second": {
+            "m_Texture": {
+              "m_FileID": 0,
+              "m_PathID": 7450153521940550161
+            },
+            "m_Scale": {
+              "x": 1.0,
+              "y": 1.0
+            },
+            "m_Offset": {
+              "x": 0.0,
+              "y": 0.0
+            }
+          }
+        },
+        {
+          "first": "_EmissionMap",
+          "second": {
+            "m_Texture": {
+              "m_FileID": 0,
+              "m_PathID": 0
+            },
+            "m_Scale": {
+              "x": 1.0,
+              "y": 1.0
+            },
+            "m_Offset": {
+              "x": 0.0,
+              "y": 0.0
+            }
+          }
+        },
+        {
+          "first": "_MorphEmissionMap",
+          "second": {
+            "m_Texture": {
+              "m_FileID": 0,
+              "m_PathID": 0
+            },
+            "m_Scale": {
+              "x": 1.0,
+              "y": 1.0
+            },
+            "m_Offset": {
+              "x": 0.0,
+              "y": 0.0
+            }
+          }
+        },
+        {
+          "first": "_MorphPatternMap",
+          "second": {
+            "m_Texture": {
+              "m_FileID": 0,
+              "m_PathID": 0
+            },
+            "m_Scale": {
+              "x": 1.0,
+              "y": 1.0
+            },
+            "m_Offset": {
+              "x": 0.0,
+              "y": 0.0
+            }
+          }
+        },
+        {
+          "first": "_MultiMap",
+          "second": {
+            "m_Texture": {
+              "m_FileID": 0,
+              "m_PathID": 3535816326786249159
+            },
+            "m_Scale": {
+              "x": 1.0,
+              "y": 1.0
+            },
+            "m_Offset": {
+              "x": 0.0,
+              "y": 0.0
+            }
+          }
+        },
+        {
+          "first": "_ToonRamp",
+          "second": {
+            "m_Texture": {
+              "m_FileID": 7,
+              "m_PathID": -914440881901598052
+            },
+            "m_Scale": {
+              "x": 1.0,
+              "y": 1.0
+            },
+            "m_Offset": {
+              "x": 0.0,
+              "y": 0.0
+            }
+          }
+        },
+        {
+          "first": "_ToonRampMetal",
+          "second": {
+            "m_Texture": {
+              "m_FileID": 0,
+              "m_PathID": 0
+            },
+            "m_Scale": {
+              "x": 1.0,
+              "y": 1.0
+            },
+            "m_Offset": {
+              "x": 0.0,
+              "y": 0.0
+            }
+          }
+        },
+        {
+          "first": "_ToonRampMetal_Morph",
+          "second": {
+            "m_Texture": {
+              "m_FileID": 0,
+              "m_PathID": 0
+            },
+            "m_Scale": {
+              "x": 1.0,
+              "y": 1.0
+            },
+            "m_Offset": {
+              "x": 0.0,
+              "y": 0.0
+            }
+          }
+        },
+        {
+          "first": "_ToonRamp_Morph",
+          "second": {
+            "m_Texture": {
+              "m_FileID": 0,
+              "m_PathID": 0
+            },
+            "m_Scale": {
+              "x": 1.0,
+              "y": 1.0
+            },
+            "m_Offset": {
+              "x": 0.0,
+              "y": 0.0
+            }
+          }
+        }
+      ]
+    },
+    "m_Floats": {
+      "Array": [
+        {
+          "first": "_BumpCameraAttenuation",
+          "second": 0.2
+        },
+        {
+          "first": "_BumpScale",
+          "second": 1.0
+        },
+        {
+          "first": "_DEBUG_CUSTOM_OUTLINE_ONLY",
+          "second": 0.0
+        },
+        {
+          "first": "_Dev_KeyToonSpecularByLight",
+          "second": 0.0
+        },
+        {
+          "first": "_DisableOutline",
+          "second": 0.0
+        },
+        {
+          "first": "_DitherAlphaValue",
+          "second": 1.0
+        },
+        {
+          "first": "_Key_DitherAlpha",
+          "second": 0.0
+        },
+        {
+          "first": "_Key_Engage",
+          "second": 0.0
+        },
+        {
+          "first": "_LightColorToWhite",
+          "second": 0.0
+        },
+        {
+          "first": "_LightShadowToWhite",
+          "second": 0.0
+        },
+        {
+          "first": "_Makeup",
+          "second": 0.0
+        },
+        {
+          "first": "_OcclusionIntensity",
+          "second": 0.65
+        },
+        {
+          "first": "_OutlineGameScale",
+          "second": 1.0
+        },
+        {
+          "first": "_OutlineOriginalColorRate",
+          "second": 0.0
+        },
+        {
+          "first": "_OutlineScale",
+          "second": 3.5
+        },
+        {
+          "first": "_OutlineTexMipLevel",
+          "second": 4.0
+        },
+        {
+          "first": "_Preset",
+          "second": 6.0
+        },
+        {
+          "first": "_RimLightBlend",
+          "second": 0.0
+        },
+        {
+          "first": "_RimLightScale",
+          "second": 0.0
+        },
+        {
+          "first": "_S_Key_BumpAttenuation",
+          "second": 1.0
+        },
+        {
+          "first": "_S_Key_ColorChangeMask",
+          "second": 0.0
+        },
+        {
+          "first": "_S_Key_MorphDress",
+          "second": 0.0
+        },
+        {
+          "first": "_S_Key_MorphSkin",
+          "second": 0.0
+        },
+        {
+          "first": "_S_Key_RimLight",
+          "second": 1.0
+        },
+        {
+          "first": "_S_Key_StandardColor",
+          "second": 0.0
+        },
+        {
+          "first": "_S_Key_StandardSkin",
+          "second": 1.0
+        }
+      ]
+    },
+    "m_Colors": {
+      "Array": [
+        {
+          "first": "_BaseColor",
+          "second": {
+            "r": 0.93333334,
+            "g": 0.73333335,
+            "b": 0.627451,
+            "a": 1.0
+          }
+        },
+        {
+          "first": "_ColorChangeMask025",
+          "second": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          }
+        },
+        {
+          "first": "_ColorChangeMask050",
+          "second": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          }
+        },
+        {
+          "first": "_ColorChangeMask075",
+          "second": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          }
+        },
+        {
+          "first": "_ColorChangeMask100",
+          "second": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          }
+        },
+        {
+          "first": "_EmissionColor",
+          "second": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          }
+        },
+        {
+          "first": "_EngageEmissionColor",
+          "second": {
+            "r": 0.31399998,
+            "g": 0.31399998,
+            "b": 0.4699999,
+            "a": 1.0
+          }
+        },
+        {
+          "first": "_OutlineColor",
+          "second": {
+            "r": 0.32941177,
+            "g": 0.15686275,
+            "b": 0.15686275,
+            "a": 1.0
+          }
+        },
+        {
+          "first": "_RimLightColorLight",
+          "second": {
+            "r": 0.93333334,
+            "g": 0.6039216,
+            "b": 0.6039216,
+            "a": 1.0
+          }
+        },
+        {
+          "first": "_RimLightColorShadow",
+          "second": {
+            "r": 0.7921569,
+            "g": 0.45882353,
+            "b": 0.0,
+            "a": 1.0
+          }
+        },
+        {
+          "first": "_ToonShadowColor",
+          "second": {
+            "r": 0.8980392,
+            "g": 0.8980392,
+            "b": 0.8980392,
+            "a": 1.0
+          }
+        }
+      ]
+    }
+  },
+  "m_BuildTextureStacks": {
+    "Array": []
+  }
+}

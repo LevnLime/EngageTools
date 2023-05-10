@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net7.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="AssetsTools.NET">
+      <HintPath>..\..\..\..\..\..\Games\ModdingTools\uabea-windows_v6\AssetsTools.NET.dll</HintPath>
+    </Reference>
+    <Reference Include="AssetsTools.NET.Cpp2IL">
+      <HintPath>..\..\..\..\..\..\Games\ModdingTools\uabea-windows_v6\AssetsTools.NET.Cpp2IL.dll</HintPath>
+    </Reference>
+    <Reference Include="AssetsTools.NET.MonoCecil">
+      <HintPath>..\..\..\..\..\..\Games\ModdingTools\uabea-windows_v6\AssetsTools.NET.MonoCecil.dll</HintPath>
+    </Reference>
+    <Reference Include="AssetsTools.NET.Texture">
+      <HintPath>..\..\..\..\..\..\Games\ModdingTools\uabea-windows_v6\AssetsTools.NET.Texture.dll</HintPath>
+    </Reference>
+    <Reference Include="UABEAvalonia">
+      <HintPath>..\..\..\..\..\..\Games\ModdingTools\uabea-windows_v6\UABEAvalonia.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>
