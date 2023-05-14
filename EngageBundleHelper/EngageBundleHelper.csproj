@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="3.0.1" />
   </ItemGroup>
 
   <ItemGroup>
@@ -24,9 +25,29 @@
     <Reference Include="AssetsTools.NET.Texture">
       <HintPath>..\..\..\..\..\..\Games\ModdingTools\uabea-windows_v6\AssetsTools.NET.Texture.dll</HintPath>
     </Reference>
+    <Reference Include="TexturePlugin">
+      <HintPath>..\..\..\..\..\..\Games\ModdingTools\uabea-windows_v6\plugins\TexturePlugin.dll</HintPath>
+    </Reference>
     <Reference Include="UABEAvalonia">
       <HintPath>..\..\..\..\..\..\Games\ModdingTools\uabea-windows_v6\UABEAvalonia.dll</HintPath>
     </Reference>
   </ItemGroup>
 
+  <Target Name="CopyDependencies" AfterTargets="AfterBuild">
+    <PropertyGroup>
+      <DependenciesDir>$(ProjectDir)Dependencies\</DependenciesDir>
+      <NativeDependenciesDir>$(ProjectDir)Dependencies\native\</NativeDependenciesDir>
+    </PropertyGroup>
+
+    <!-- Copy Unity classdata package -->
+    <Copy SourceFiles="$(DependenciesDir)classdata.tpk" DestinationFolder="$(TargetDir)" ContinueOnError="true" />
+
+    <!-- Copy TextToolWrap and dependencies to target folder -->
+    <Copy SourceFiles="$(NativeDependenciesDir)TexToolWrap.dll" DestinationFolder="$(TargetDir)" ContinueOnError="true" />
+    <Copy SourceFiles="$(NativeDependenciesDir)ispc_texcomp.dll" DestinationFolder="$(TargetDir)" ContinueOnError="true" />
+    <Copy SourceFiles="$(NativeDependenciesDir)PVRTexLib.dll" DestinationFolder="$(TargetDir)" ContinueOnError="true" />
+    <Copy SourceFiles="$(NativeDependenciesDir)crnlib.dll" DestinationFolder="$(TargetDir)" ContinueOnError="true" />
+
+  </Target>
+  
 </Project>

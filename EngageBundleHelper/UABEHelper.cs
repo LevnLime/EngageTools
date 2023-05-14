@@ -7,6 +7,7 @@ using UABEAvalonia;
 using AssetsTools.NET;
 using AssetsTools.NET.Extra;
 using System.Xml.Linq;
+using AssetsTools.NET.Texture;
 
 namespace EngageBundleHelper
 {
@@ -58,6 +59,16 @@ namespace EngageBundleHelper
 			}
 
 			return bytes;
+		}
+
+		public static byte[] GetTexturePlatformBlob(AssetTypeValueField textureRootNode)
+		{
+			return TexturePlugin.TextureHelper.GetPlatformBlob(textureRootNode);
+		}
+
+		public static byte[] ImportTexture(string imagePath, TextureFormat format, out int width, out int height, ref int mips, uint platform = 0, byte[] platformBlob = null)
+		{
+			return TexturePlugin.TextureImportExport.Import(imagePath, format, out width, out height, ref mips, platform, platformBlob);
 		}
 	}
 }

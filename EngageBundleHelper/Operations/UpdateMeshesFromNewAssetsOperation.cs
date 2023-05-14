@@ -88,7 +88,7 @@ namespace EngageBundleHelper.Operations
 		{
 			// Load assets from a Unity assets file
 			AssetsManager assetsManager = new AssetsManager();
-			assetsManager.LoadClassPackage(Path.Combine(folderPath, "classdata.tpk"));  // I took this from UABE Avalonia v6
+			assetsManager.LoadClassPackage("classdata.tpk");  // I took this from UABE Avalonia v6
 			AssetsFileInstance newAssetsFileInst = assetsManager.LoadAssetsFile(newAssetsFileName, true /*loadDeps*/);
 			AssetsFile newAssetsFile = newAssetsFileInst.file;
 			assetsManager.LoadClassDatabaseFromPackage(newAssetsFile.Metadata.UnityVersion);
