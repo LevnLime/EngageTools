@@ -6,17 +6,44 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.ComponentModel;
+using System.Xml.Linq;
 
-namespace EngageBundleHelper
+namespace EngageBundleHelper.Operations
 {
-	internal static class Operations
+	public record UpdateMeshesFromNewAssetsOperationParams
 	{
-		static string basePath = "C:\\Users\\Burney\\source\\repos\\EngageTools\\TestFiles";
+		public required string BundleFileName { get; init; }
+		public required string NewAssetsFileName { get; init; }
+		public required string NewAssetsNameSearchTerm { get; init; }
+		public required IEnumerable<string> MeshesToUpdate { get; init;}
+		public string BasePath { get; init; } = string.Empty;
+		public string OutputBundleFileName { get; init; } = "output.bundle";
+	}
+	public class UpdateMeshesFromNewAssetsOperation
+	{
+		
+		private UpdateMeshesFromNewAssetsOperationParams parameters;
 
-		public static void updateMeshesFromNewAssetsOperation(string bundleFileName, string newAssetsFileName, string newAssetsNameSearchTerm, IEnumerable<string> meshesToUpdate)
+		public UpdateMeshesFromNewAssetsOperation(UpdateMeshesFromNewAssetsOperationParams parameters)
 		{
-			string updatedBundleFileName = bundleFileName + ".mod";
+			this.parameters = parameters;
+		}
 
+		public void Execute()
+		{
+			Execute(
+				Path.Combine(parameters.BasePath, parameters.BundleFileName),
+				Path.Combine(parameters.BasePath, parameters.NewAssetsFileName),
+				parameters.NewAssetsNameSearchTerm,
+				parameters.MeshesToUpdate,
+				parameters.BasePath,
+				Path.Combine(parameters.BasePath, parameters.OutputBundleFileName)
+			);
+		}
+
+		public static void Execute(string bundleFileName, string newAssetsFileName, string newAssetsNameSearchTerm, IEnumerable<string> meshesToUpdate, string basePath, string outputBundleFileName)
+		{
 			AssetsManager assetsManager = new AssetsManager();
 			BundleFileInstance bundleInst = assetsManager.LoadBundleFile(bundleFileName);
 			AssetsFileInstance assetsFileInst = assetsManager.LoadAssetsFileFromBundle(bundleInst, 0, true /*loadDeps*/);
@@ -45,7 +72,7 @@ namespace EngageBundleHelper
 				new BundleReplacerFromAssets(assetsFileInst.name, null, assetsFileInst.file, assetsReplacers)
 			};
 
-			using (AssetsFileWriter writer = new AssetsFileWriter(updatedBundleFileName))
+			using (AssetsFileWriter writer = new AssetsFileWriter(outputBundleFileName))
 			{
 				bundleInst.file.Write(writer, bundleReplacers);
 			}
@@ -61,7 +88,7 @@ namespace EngageBundleHelper
 		{
 			// Load assets from a Unity assets file
 			AssetsManager assetsManager = new AssetsManager();
-			assetsManager.LoadClassPackage(Path.Combine(basePath, "classdata.tpk"));  // I took this from UABE Avalonia v6
+			assetsManager.LoadClassPackage(Path.Combine(folderPath, "classdata.tpk"));  // I took this from UABE Avalonia v6
 			AssetsFileInstance newAssetsFileInst = assetsManager.LoadAssetsFile(newAssetsFileName, true /*loadDeps*/);
 			AssetsFile newAssetsFile = newAssetsFileInst.file;
 			assetsManager.LoadClassDatabaseFromPackage(newAssetsFile.Metadata.UnityVersion);
@@ -119,7 +146,5 @@ namespace EngageBundleHelper
 			File.WriteAllText(fileName, rootToken.ToString());
 			Debug.WriteLine($"Updated name and bone name hashes in JSON file \"{fileName}\"");
 		}
-
-
 	}
 }
