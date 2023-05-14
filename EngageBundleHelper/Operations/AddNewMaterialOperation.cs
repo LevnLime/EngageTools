@@ -336,7 +336,19 @@ namespace EngageBundleHelper.Operations
 			TextureFormat format = (TextureFormat)rootNode["m_TextureFormat"].AsInt;
 			byte[] platformBlob = UABEHelper.GetTexturePlatformBlob(rootNode);
 			uint platform = assetsFileInst.file.Metadata.TargetPlatform;
-			int mips = !rootNode["m_MipCount"].IsDummy ? rootNode["m_MipCount"].AsInt : 1;
+
+			// I have no idea what mips or mipmaps are, but I can confirm that things look bad if this mips value is wrong
+			// Originally, I just copied over the texture JSON's "m_MipCount" property. However, in game this looked really bad.
+			// Importing the texture using UABE's UI fixed it, but the only difference I could tell is that UABE set mips to 1
+			// Looking at UABE's Texture EditDialog code, I think it leaves mips as 1 if the texture JSON's "m_MipMap" is not true
+			// I'll try to emulate that logic here (but once again, I have no idea what this actually is doing)
+			int mips = 1;
+			TextureFile assetToolsTextureFile = TextureFile.ReadTextureFile(rootNode);
+			if (assetToolsTextureFile.m_MipMap)
+			{
+				mips = assetToolsTextureFile.m_MipCount;
+			}
+
 
 			byte[] encodedImageBytes = UABEHelper.ImportTexture(textureFilePath, format, out int width, out int height, ref mips, platform, platformBlob);
 
