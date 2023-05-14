@@ -28,6 +28,7 @@ updateMeshesOperation.Execute();
 AddNewMaterialOperationParams addNewMaterialParams = new AddNewMaterialOperationParams()
 {
 	BundleFileName = "updateMeshesOutput.bundle",
+	MeshName = "_Skin",
 	NewMaterialFileName = "MtSkin_Material.json",
 	AlbedoTextureJsonFileName = "Albedo_Texture.json",
 	NormalTextureJsonFileName = "Normal_Texture.json",

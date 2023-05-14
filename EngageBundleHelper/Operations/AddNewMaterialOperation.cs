@@ -13,6 +13,10 @@ namespace EngageBundleHelper.Operations
 	public record AddNewMaterialOperationParams
 	{
 		public required string BundleFileName { get; init; }
+		/// <summary>
+		/// The name of the Mesh to add this new material to
+		/// </summary>
+		public required string MeshName { get; init; }
 		public required string NewMaterialFileName { get; init; }
 		public string AlbedoTextureJsonFileName { get; init; } = string.Empty;
 		public string AlbedoTextureImageFileName { get; init;} = string.Empty;
@@ -22,6 +26,12 @@ namespace EngageBundleHelper.Operations
 		public string MultiTextureImageFileName { get; init; } = string.Empty;
 		public string BasePath { get; init; } = string.Empty;
 		public string OutputBundleFileName { get; init; } = "output.bundle";
+		/// <summary>
+		///  This is the material that will be used to get a pointer to the Shader that will be used for the new material we're adding.
+		///  From very limited testing, it looks like MtSkin and MtDress both use the same Shader, but MtShadow uses a different shader.
+		///  We generally want to use the one from MtSkin/MtDress
+		/// </summary>
+		public string ShaderSourceMaterialName { get; init; } = "MtDress";
 	}
 	public class AddNewMaterialOperation
 	{
@@ -40,11 +50,13 @@ namespace EngageBundleHelper.Operations
 			// First pass adds the new material, the texture JSON assets, and connects them. It does not import the actual texture images yet.
 			Dictionary<string, long> newTexturePathIds = addNewMaterialAndTextureJson(
 				Path.Combine(parameters.BasePath, parameters.BundleFileName),
+				parameters.MeshName,
 				Path.Combine(parameters.BasePath, parameters.NewMaterialFileName),
 				Path.Combine(parameters.BasePath, parameters.AlbedoTextureJsonFileName),
 				Path.Combine(parameters.BasePath, parameters.NormalTextureJsonFileName),
 				Path.Combine(parameters.BasePath, parameters.MultiTextureJsonFileName),
-				tempBundlePath
+				tempBundlePath,
+				parameters.ShaderSourceMaterialName
 			);
 
 			// Second pass imports the texture images for the new textures
@@ -63,11 +75,13 @@ namespace EngageBundleHelper.Operations
 
 		Dictionary<string, long> addNewMaterialAndTextureJson(
 			string bundleFileName,
+			string meshName,
 			string newMaterialFileName,
 			string albedoTextureJsonFile,
 			string normalTextureJsonFile,
 			string multiTextureJsonFile,
-			string outputBundleFileName
+			string outputBundleFileName,
+			string shaderSourceMaterialName
 		)
 		{
 			AssetsManager assetsManager = new AssetsManager();
@@ -76,12 +90,11 @@ namespace EngageBundleHelper.Operations
 
 			List<AssetsReplacer> assetsReplacers = new List<AssetsReplacer>();
 
-			// We need to get a pointer to the Shader to reuse
-			// From very limited testing, it looks like MtSkin and MtDress both use the same Shader, but MtShadow uses a different shader. We want to use the one from MtSkin/MtDress
-			AssetFileInfo? materialInfo = Helpers.findAssetInfoByName(assetsManager, assetsFileInst, "MtDress", AssetClassID.Material);
+			// We need to get a pointer to an existing Shader to reuse
+			AssetFileInfo? materialInfo = Helpers.findAssetInfoByName(assetsManager, assetsFileInst, shaderSourceMaterialName, AssetClassID.Material);
 			if (materialInfo == null)
 			{
-				throw new Exception("Unable to find original MtDress material");
+				throw new Exception($"Unable to find original {shaderSourceMaterialName} material to get the shader from");
 			}
 			AssetTypeValueField rootNode = assetsManager.GetBaseField(assetsFileInst, materialInfo);
 			AssetTypeValueField shaderElem = rootNode["m_Shader"];
@@ -100,9 +113,13 @@ namespace EngageBundleHelper.Operations
 			assetsReplacers.Add(newMaterialReplacer);
 
 			// Make the Skin mesh SkinnedMeshRenderer understand the new material we just added
-			AssetFileInfo? skinMeshInfo = Helpers.findAssetInfoByName(assetsManager, assetsFileInst, "_Skin", AssetClassID.Mesh);
-			long skinMeshPathId = skinMeshInfo.PathId;
-			AssetsReplacer skinnedMeshRendererReplacer = addMaterialToSkinnedMeshRenderer(assetsManager, assetsFileInst, skinMeshPathId, newMaterialPathId);
+			AssetFileInfo? meshInfo = Helpers.findAssetInfoByName(assetsManager, assetsFileInst, meshName, AssetClassID.Mesh);
+			if (meshInfo == null)
+			{
+				throw new Exception($"Unable to find mesh \"{meshName}\" to attach material to");
+			}
+			long meshPathId = meshInfo.PathId;
+			AssetsReplacer skinnedMeshRendererReplacer = addMaterialToSkinnedMeshRenderer(assetsManager, assetsFileInst, meshPathId, newMaterialPathId);
 			assetsReplacers.Add(skinnedMeshRendererReplacer);
 
 			// Save the changes into the bundle
@@ -116,6 +133,8 @@ namespace EngageBundleHelper.Operations
 				bundleInst.file.Write(writer, bundleReplacers);
 			}
 
+			// Cleanup
+			File.Delete(fixedNewMaterialTempFileName);
 			assetsManager.UnloadAll();
 
 			return newTexturePathIds;
