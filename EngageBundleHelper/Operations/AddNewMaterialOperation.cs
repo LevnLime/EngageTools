@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using AssetsTools.NET.Texture;
 
 namespace EngageBundleHelper.Operations
 {
@@ -14,8 +15,11 @@ namespace EngageBundleHelper.Operations
 		public required string BundleFileName { get; init; }
 		public required string NewMaterialFileName { get; init; }
 		public string AlbedoTextureJsonFileName { get; init; } = string.Empty;
+		public string AlbedoTextureImageFileName { get; init;} = string.Empty;
 		public string NormalTextureJsonFileName { get; init; } = string.Empty;
+		public string NormalTextureImageFileName { get; init; } = string.Empty;
 		public string MultiTextureJsonFileName { get; init; } = string.Empty;
+		public string MultiTextureImageFileName { get; init; } = string.Empty;
 		public string BasePath { get; init; } = string.Empty;
 		public string OutputBundleFileName { get; init; } = "output.bundle";
 	}
@@ -30,17 +34,34 @@ namespace EngageBundleHelper.Operations
 
 		public void Execute()
 		{
-			addNewMaterialAndTextures(
+			// Temporary bundle is needed because I'm doing this in two passes. I haven't figured out how to do this in one pass...
+			string tempBundlePath = Path.Combine(parameters.BasePath, parameters.BundleFileName + "_TEMP_DELETE_ME");
+
+			// First pass adds the new material, the texture JSON assets, and connects them. It does not import the actual texture images yet.
+			Dictionary<string, long> newTexturePathIds = addNewMaterialAndTextureJson(
 				Path.Combine(parameters.BasePath, parameters.BundleFileName),
 				Path.Combine(parameters.BasePath, parameters.NewMaterialFileName),
 				Path.Combine(parameters.BasePath, parameters.AlbedoTextureJsonFileName),
 				Path.Combine(parameters.BasePath, parameters.NormalTextureJsonFileName),
 				Path.Combine(parameters.BasePath, parameters.MultiTextureJsonFileName),
+				tempBundlePath
+			);
+
+			// Second pass imports the texture images for the new textures
+			importTextureImagesToBundle(
+				tempBundlePath,
+				newTexturePathIds,
+				Path.Combine(parameters.BasePath, parameters.AlbedoTextureImageFileName),
+				Path.Combine(parameters.BasePath, parameters.NormalTextureImageFileName),
+				Path.Combine(parameters.BasePath, parameters.MultiTextureImageFileName),
 				Path.Combine(parameters.BasePath, parameters.OutputBundleFileName)
 			);
+
+			// Cleanup. Delete that temporary file
+			File.Delete(tempBundlePath);
 		}
 
-		void addNewMaterialAndTextures(
+		Dictionary<string, long> addNewMaterialAndTextureJson(
 			string bundleFileName,
 			string newMaterialFileName,
 			string albedoTextureJsonFile,
@@ -95,6 +116,67 @@ namespace EngageBundleHelper.Operations
 				bundleInst.file.Write(writer, bundleReplacers);
 			}
 
+			assetsManager.UnloadAll();
+
+			return newTexturePathIds;
+		}
+
+		void importTextureImagesToBundle(
+			string bundleFileName,
+			Dictionary<string, long> texturePathIds,
+			string albedoTextureImageFile,
+			string normalTextureImageFile,
+			string multiTextureImageFile,
+			string outputBundleFileName
+		)
+		{
+			AssetsManager assetsManager = new AssetsManager();
+			BundleFileInstance bundleInst = assetsManager.LoadBundleFile(bundleFileName);
+			AssetsFileInstance assetsFileInst = assetsManager.LoadAssetsFileFromBundle(bundleInst, 0, true /*loadDeps*/);
+			
+			List<AssetsReplacer> assetsReplacers = new List<AssetsReplacer>();
+
+			// Iterate through the new textures that were created and import their image files
+			foreach (var entry in texturePathIds)
+			{
+				string textureFilePath;
+				switch (entry.Key)
+				{
+					case "_BaseMap": textureFilePath = albedoTextureImageFile; break;
+					case "_BumpMap": textureFilePath = normalTextureImageFile; break;
+					case "_MultiMap": textureFilePath = multiTextureImageFile; break;
+					default: throw new Exception("Unexpected entry in texturePathIds: " + entry.Key);	// This shouldn't happen
+				}
+				long pathId = entry.Value;
+
+				if (File.Exists(textureFilePath))
+				{
+					AssetFileInfo textureAssetInfo = assetsFileInst.file.GetAssetInfo(pathId);
+					AssetTypeValueField rootNode = assetsManager.GetBaseField(assetsFileInst, textureAssetInfo);
+					importTextureImage(assetsFileInst, rootNode, textureFilePath);
+					assetsReplacers.Add(new AssetsReplacerFromMemory(assetsFileInst.file, textureAssetInfo, rootNode));
+				}
+				else
+				{
+					// This means that we added a new Texture2D asset (the JSON file) to the bundle, but do not actually have the texture image
+					// This will probably make that material behave unexpectedly
+					string textureType = entry.Key == "_BaseMap" ? "Albedo" : (entry.Key == "_BumpMap" ? "Normal" : "Multi");
+					Console.WriteLine($"Warning! {textureType} texture image not found! No image imported into this texture. Path searched: {textureFilePath}");
+				}
+			}
+
+			// Save the changes into the bundle
+			List<BundleReplacer> bundleReplacers = new List<BundleReplacer>
+			{
+				new BundleReplacerFromAssets(assetsFileInst.name, null, assetsFileInst.file, assetsReplacers)
+			};
+
+			using (AssetsFileWriter writer = new AssetsFileWriter(outputBundleFileName))
+			{
+				bundleInst.file.Write(writer, bundleReplacers);
+			}
+
+			assetsManager.UnloadAll();
 		}
 
 		List<AssetsReplacer> addTextureAssets(AssetsManager assetsManager, AssetsFileInstance assetsFileInst, string albedoTextureJsonFile, string normalTextureJsonFile, string multiTextureJsonFile, out Dictionary<string, long> pathIds)
@@ -247,6 +329,36 @@ namespace EngageBundleHelper.Operations
 			materialsArray.Children.Add(newMaterial);
 
 			return new AssetsReplacerFromMemory(assetsFileInst.file, skinnedMeshRendererInfo, rootNode);
+		}
+
+		void importTextureImage(AssetsFileInstance assetsFileInst, AssetTypeValueField rootNode, string textureFilePath)
+		{
+			TextureFormat format = (TextureFormat)rootNode["m_TextureFormat"].AsInt;
+			byte[] platformBlob = UABEHelper.GetTexturePlatformBlob(rootNode);
+			uint platform = assetsFileInst.file.Metadata.TargetPlatform;
+			int mips = !rootNode["m_MipCount"].IsDummy ? rootNode["m_MipCount"].AsInt : 1;
+
+			byte[] encodedImageBytes = UABEHelper.ImportTexture(textureFilePath, format, out int width, out int height, ref mips, platform, platformBlob);
+
+			AssetTypeValueField m_StreamData = rootNode["m_StreamData"];
+			m_StreamData["offset"].AsInt = 0;
+			m_StreamData["size"].AsInt = 0;
+			m_StreamData["path"].AsString = "";
+
+			if (!rootNode["m_MipCount"].IsDummy)
+			{
+				rootNode["m_MipCount"].AsInt = mips;
+			}
+
+			rootNode["m_TextureFormat"].AsInt = (int)format;
+			rootNode["m_CompleteImageSize"].AsInt = encodedImageBytes.Length;
+			rootNode["m_Width"].AsInt = width;
+			rootNode["m_Height"].AsInt = height;
+
+			AssetTypeValueField image_data = rootNode["image data"];
+			image_data.Value.ValueType = AssetValueType.ByteArray;
+			image_data.TemplateField.ValueType = AssetValueType.ByteArray;
+			image_data.AsByteArray = encodedImageBytes;
 		}
 	}
 }
