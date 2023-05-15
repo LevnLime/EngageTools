@@ -88,7 +88,15 @@ namespace EngageBundleHelper.Operations
 		{
 			// Load assets from a Unity assets file
 			AssetsManager assetsManager = new AssetsManager();
-			assetsManager.LoadClassPackage("classdata.tpk");  // I took this from UABE Avalonia v6
+			try
+			{
+				assetsManager.LoadClassPackage("classdata.tpk");  // I took this from UABE Avalonia v6
+			}
+			catch (FileNotFoundException)
+			{
+				Console.WriteLine("Error: classdata.tpk not found. Please copy this file from SampleFiles into your current directory.");
+				throw;
+			}
 			AssetsFileInstance newAssetsFileInst = assetsManager.LoadAssetsFile(newAssetsFileName, true /*loadDeps*/);
 			AssetsFile newAssetsFile = newAssetsFileInst.file;
 			assetsManager.LoadClassDatabaseFromPackage(newAssetsFile.Metadata.UnityVersion);

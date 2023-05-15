@@ -58,6 +58,7 @@ namespace EngageBundleHelper.Operations
 				tempBundlePath,
 				parameters.ShaderSourceMaterialName
 			);
+			Debug.WriteLine($"Done adding new material and textures (JSON only) to bundle (and adjusting pointers).");
 
 			// Second pass imports the texture images for the new textures
 			importTextureImagesToBundle(
@@ -68,6 +69,7 @@ namespace EngageBundleHelper.Operations
 				Path.Combine(parameters.BasePath, parameters.MultiTextureImageFileName),
 				Path.Combine(parameters.BasePath, parameters.OutputBundleFileName)
 			);
+			Debug.WriteLine("Done importing texture images into the texture assets");
 
 			// Cleanup. Delete that temporary file
 			File.Delete(tempBundlePath);
@@ -111,6 +113,7 @@ namespace EngageBundleHelper.Operations
 			string fixedNewMaterialTempFileName = writeMaterialInfoToFile(newMaterialFileName, shaderElem, newTexturePathIds);
 			AssetsReplacer newMaterialReplacer = addTextureAsset(assetsManager, assetsFileInst, materialInfo, fixedNewMaterialTempFileName, out long newMaterialPathId);
 			assetsReplacers.Add(newMaterialReplacer);
+			Debug.WriteLine("Created new Material asset");
 
 			// Make the Skin mesh SkinnedMeshRenderer understand the new material we just added
 			AssetFileInfo? meshInfo = Helpers.findAssetInfoByName(assetsManager, assetsFileInst, meshName, AssetClassID.Mesh);
@@ -121,6 +124,7 @@ namespace EngageBundleHelper.Operations
 			long meshPathId = meshInfo.PathId;
 			AssetsReplacer skinnedMeshRendererReplacer = addMaterialToSkinnedMeshRenderer(assetsManager, assetsFileInst, meshPathId, newMaterialPathId);
 			assetsReplacers.Add(skinnedMeshRendererReplacer);
+			Debug.WriteLine($"Added new material to {meshName} mesh's SkinnedMeshRenderer's Materials list");
 
 			// Save the changes into the bundle
 			List<BundleReplacer> bundleReplacers = new List<BundleReplacer>
@@ -159,11 +163,21 @@ namespace EngageBundleHelper.Operations
 			foreach (var entry in texturePathIds)
 			{
 				string textureFilePath;
+				string textureName;
 				switch (entry.Key)
 				{
-					case "_BaseMap": textureFilePath = albedoTextureImageFile; break;
-					case "_BumpMap": textureFilePath = normalTextureImageFile; break;
-					case "_MultiMap": textureFilePath = multiTextureImageFile; break;
+					case "_BaseMap":
+						textureFilePath = albedoTextureImageFile;
+						textureName = "Albedo";
+						break;
+					case "_BumpMap":
+						textureFilePath = normalTextureImageFile;
+						textureName = "Normal";
+						break;
+					case "_MultiMap":
+						textureFilePath = multiTextureImageFile;
+						textureName = "Multi";
+						break;
 					default: throw new Exception("Unexpected entry in texturePathIds: " + entry.Key);	// This shouldn't happen
 				}
 				long pathId = entry.Value;
@@ -174,13 +188,13 @@ namespace EngageBundleHelper.Operations
 					AssetTypeValueField rootNode = assetsManager.GetBaseField(assetsFileInst, textureAssetInfo);
 					importTextureImage(assetsFileInst, rootNode, textureFilePath);
 					assetsReplacers.Add(new AssetsReplacerFromMemory(assetsFileInst.file, textureAssetInfo, rootNode));
+					Debug.WriteLine($"Successfully imported \"{textureFilePath}\" into {textureName} Texture2D asset");
 				}
 				else
 				{
 					// This means that we added a new Texture2D asset (the JSON file) to the bundle, but do not actually have the texture image
 					// This will probably make that material behave unexpectedly
-					string textureType = entry.Key == "_BaseMap" ? "Albedo" : (entry.Key == "_BumpMap" ? "Normal" : "Multi");
-					Console.WriteLine($"Warning! {textureType} texture image not found! No image imported into this texture. Path searched: {textureFilePath}");
+					Console.WriteLine($"Warning! {textureName} texture image not found! No image imported into this texture. Path searched: {textureFilePath}");
 				}
 			}
 
@@ -219,6 +233,7 @@ namespace EngageBundleHelper.Operations
 				long pathId;
 				replacers.Add(addTextureAsset(assetsManager, assetsFileInst, albedoTextureInfo, albedoTextureJsonFile, out pathId));
 				pathIds.Add("_BaseMap", pathId);
+				Debug.WriteLine("Added new Texture2D asset for Albedo texture.");
 			}
 			else
 			{
@@ -232,6 +247,7 @@ namespace EngageBundleHelper.Operations
 				long pathId;
 				replacers.Add(addTextureAsset(assetsManager, assetsFileInst, normalTextureInfo, normalTextureJsonFile, out pathId));
 				pathIds.Add("_BumpMap", pathId);
+				Debug.WriteLine("Added new Texture2D asset for Normal texture.");
 			}
 			else
 			{
@@ -245,6 +261,7 @@ namespace EngageBundleHelper.Operations
 				long pathId;
 				replacers.Add(addTextureAsset(assetsManager, assetsFileInst, multiTextureInfo, multiTextureJsonFile, out pathId));
 				pathIds.Add("_MultiMap", pathId);
+				Debug.WriteLine("Added new Texture2D asset for Multi texture.");
 			}
 			else
 			{

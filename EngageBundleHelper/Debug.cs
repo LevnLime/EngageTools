@@ -10,9 +10,9 @@ namespace EngageBundleHelper
 	{
 		static Debug()
 		{
-			IsDebugEnabled = true;
+			IsDebugEnabled = false;
 		}
-		public static bool IsDebugEnabled { get; private set; }
+		public static bool IsDebugEnabled { get; set; }
 
 		public static void WriteLine(string message)
 		{

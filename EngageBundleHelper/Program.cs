@@ -12,6 +12,11 @@ CommandLine.Parser.Default.ParseArguments<CommandLineOptions>(args).WithParsed(R
 
 static void RunWithOptions(CommandLineOptions options)
 {
+	if (options.Verbose)
+	{
+		Debug.IsDebugEnabled = true;
+	}
+
 	// Parse the config file
 	if (!File.Exists(options.ConfigFile))
 		throw new FileNotFoundException(options.ConfigFile);
