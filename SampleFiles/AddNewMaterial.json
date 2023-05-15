@@ -1,0 +1,15 @@
+{
+    "Operation": "AddNewMaterial",
+
+    "BundleFileName": "updatedMeshesOutput.bundle",
+    "MeshName": "_Skin",
+    "NewMaterialFileName": "MtSkin_Material.json",
+    "AlbedoTextureJsonFileName": "Albedo_Texture.json",
+	"NormalTextureJsonFileName": "Normal_Texture.json",
+	"MultiTextureJsonFileName": "Multi_Texture.json",
+	"AlbedoTextureImageFileName": "Albedo_Texture.png",
+	"NormalTextureImageFileName": "Normal_Texture.png",
+	"MultiTextureImageFileName": "Multi_Texture.png",
+	"BasePath": "",
+    "OutputBundleFileName": "output.bundle"
+}

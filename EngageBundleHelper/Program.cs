@@ -1,70 +1,51 @@
-﻿using AssetsTools.NET;
-using AssetsTools.NET.Extra;
-using AssetsTools.NET.Texture;
-using EngageBundleHelper;
+﻿using EngageBundleHelper;
 using EngageBundleHelper.Operations;
 using Newtonsoft.Json.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
-using System.Security.Cryptography;
-using UABEAvalonia;
+using CommandLine;
+using Newtonsoft.Json;
 
 // See https://aka.ms/new-console-template for more information
 
-string basePath = "C:\\Users\\Burney\\source\\repos\\EngageTools\\TestFiles";
+CommandLine.Parser.Default.ParseArguments<CommandLineOptions>(args).WithParsed(RunWithOptions);
 
-UpdateMeshesFromNewAssetsOperationParams updateMeshesParams = new UpdateMeshesFromNewAssetsOperationParams()
+static void RunWithOptions(CommandLineOptions options)
 {
-	BundleFileName = "base.bundle",
-	NewAssetsFileName = "sharedassets0.assets",
-	NewAssetsNameSearchTerm = "_FIXED",
-	MeshesToUpdate = new List<string>() { "_Dress", "_Skin" },  // Be careful not to accidentally pick the "ShadowMesh_Dress"!
-	BasePath = basePath,
-	OutputBundleFileName = "updateMeshesOutput.bundle"
-};
-UpdateMeshesFromNewAssetsOperation updateMeshesOperation = new UpdateMeshesFromNewAssetsOperation(updateMeshesParams);
-updateMeshesOperation.Execute();
+	// Parse the config file
+	if (!File.Exists(options.ConfigFile))
+		throw new FileNotFoundException(options.ConfigFile);
+	string fileContents = File.ReadAllText(options.ConfigFile);
 
-AddNewMaterialOperationParams addNewMaterialParams = new AddNewMaterialOperationParams()
-{
-	BundleFileName = "updateMeshesOutput.bundle",
-	MeshName = "_Skin",
-	NewMaterialFileName = "MtSkin_Material.json",
-	AlbedoTextureJsonFileName = "Albedo_Texture.json",
-	NormalTextureJsonFileName = "Normal_Texture.json",
-	MultiTextureJsonFileName = "Multi_Texture.json",
-	AlbedoTextureImageFileName = "Albedo_Texture.png",
-	NormalTextureImageFileName = "Normal_Texture.png",
-	MultiTextureImageFileName = "Multi_Texture.png",
-	BasePath = basePath,
-	OutputBundleFileName = "final.bundle"
-};
-AddNewMaterialOperation addNewMaterialOperation = new AddNewMaterialOperation(addNewMaterialParams);
-addNewMaterialOperation.Execute();
-
-Console.WriteLine("Complete!");
-
-void HelloWorld()
-{
-	string testFile = Path.Combine(basePath, "base.bundle");
-	AssetsManager assetsManager = new AssetsManager();
-
-	BundleFileInstance baseBundle = assetsManager.LoadBundleFile(testFile);
-	AssetsFileInstance baseAssetsFileInst = assetsManager.LoadAssetsFileFromBundle(baseBundle, 0);
-
-	var file = baseAssetsFileInst;
-	List<AssetsReplacer> replacers = new List<AssetsReplacer>();
-	foreach (var assetInfo in file.file.GetAssetsOfType(AssetClassID.Material))
+	RootConfigFile config = JsonConvert.DeserializeObject<RootConfigFile>(fileContents);
+	
+	switch(config.Operation)
 	{
-		var rootNode = assetsManager.GetBaseField(file, assetInfo);
-		string name = rootNode["m_Name"].AsString;
-		string newName = name + "_MODIFIED";
-		Console.WriteLine($"{name} -> {newName}");
-		rootNode["m_Name"].AsString = newName;
-		replacers.Add(new AssetsReplacerFromMemory(file.file, assetInfo, rootNode));
+		case "UpdateMeshesFromNewAssets":
+			UpdateMeshesFromNewAssetsOperationParams updateMeshesParams = JsonConvert.DeserializeObject<UpdateMeshesFromNewAssetsOperationParams>(fileContents);
+			UpdateMeshesFromNewAssetsOperation updateMeshesOperation = new UpdateMeshesFromNewAssetsOperation(updateMeshesParams);
+			updateMeshesOperation.Execute();
+			break;
+		case "AddNewMaterial":
+			AddNewMaterialOperationParams addNewMaterialParams = JsonConvert.DeserializeObject<AddNewMaterialOperationParams>(fileContents);
+			AddNewMaterialOperation addNewMaterialOperation = new AddNewMaterialOperation(addNewMaterialParams);
+			addNewMaterialOperation.Execute();
+			break;
+		default:
+			throw new ArgumentException($"Invalid Operation: {config.Operation}");
 	}
+}
 
-	var writer = new AssetsFileWriter(Path.Combine(basePath, "testtestModified.bundle"));
-	file.file.Write(writer, 0, replacers);
-	writer.Close();
+public record RootConfigFile
+{
+	public required string Operation { get; init; }
+}
+
+public class CommandLineOptions
+{
+	[Option('c', "ConfigFile", Required = true, HelpText = "Filename of the config file to use")]
+	public required string ConfigFile { get; set; }
+
+	[Option('v', "verbose", Required = false, HelpText = "Print verbose messages to the console to assist in debugging")]
+	public bool Verbose { get; set; }
 }

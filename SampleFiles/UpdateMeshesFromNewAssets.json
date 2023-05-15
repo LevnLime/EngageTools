@@ -1,0 +1,10 @@
+{
+    "Operation": "UpdateMeshesFromNewAssets",
+
+    "BundleFileName": "base.bundle",
+    "NewAssetsFileName": "sharedassets0.assets",
+    "NewAssetsNameSearchTerm": "_FIXED",
+    "MeshesToUpdate": [ "_Dress", "_Skin" ],
+    "BasePath": "",
+    "OutputBundleFileName": "updatedMeshesOutput.bundle"
+}

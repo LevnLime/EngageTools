@@ -1,0 +1,17 @@
+{
+  "profiles": {
+    "EngageBundleHelper": {
+      "commandName": "Project"
+    },
+    "UpdateMeshesOperation": {
+      "commandName": "Project",
+      "commandLineArgs": "-c UpdateMeshesFromNewAssets.json",
+      "workingDirectory": "C:\\Users\\Burney\\source\\repos\\EngageTools\\TestFiles"
+    },
+    "AddNewMaterial": {
+      "commandName": "Project",
+      "commandLineArgs": "-c AddNewMaterial.json",
+      "workingDirectory": "C:\\Users\\Burney\\source\\repos\\EngageTools\\TestFiles"
+    }
+  }
+}
