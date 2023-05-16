@@ -74,8 +74,9 @@ Suppose that you are trying to create your own [Lapis Midriff and Thighs](https:
     - A common source for female body parts is Zephia's Skin mesh (ubody_msn0df_c553.bundle) because it is the most complete. So you take a midriff and thighs from Zephia
     - Now Lapis's Skin mesh has a midriff and thighs (in addition to the neck). Notice that the neck uses Lapis's original MtSkin material, but the midriff and thighs from Zephia uses a different MtSkin.001 material
 - You've already done Step 3 and had Unity build your updated mesh into a new Unity assets file (sharedassets0.assets)
+  - Important! You must append "_FIXED" to the names of your generated Skin and Dress meshes. (EngageBundleHelper will search for assets by partial name)
   - In Unity, you may notice that it will say your Skin mesh has two "submeshes" (corresponding to the two Materials that that mesh uses)
-### EngageBundlerHelper Usage for this example basic scenario
+### EngageBundleHelper Usage for this example basic scenario
 1) Navigate to the SampleFiles folder that I've provided in command prompt.
 2) Copy Lapis's bundle (ubody_swd0af_c251.bundle) into this folder
 3) Copy the built Unity assets file (sharedassets0.assets) into this folder
@@ -94,7 +95,9 @@ Suppose that you are trying to create your own [Lapis Midriff and Thighs](https:
 - AddNewMaterial.json is a config file for EngageBundlerHelper and is meant to be used second
 - classdata.tpk is needed by the UpdateMeshesFromNewAssets operation. (I couldn't figure out how to get the program to find the file more reliably, so I just stuck it in here)
 
-# Libraries
+# Libraries and References
 - [AssetsTools.NET](https://github.com/nesrak1/AssetsTools.NET) - The base library for interacting with Unity bundles. I'm using the v3 version.
 - [UABE Avalonia](https://github.com/nesrak1/UABEA) - The UI tool that I'm trying to automate some tasks for. I actually call into UABEAvalonia.dll directly on some occasions
+
+- [GameBanana Model Replacement Guide](https://gamebanana.com/tuts/15746) - This is the first model replacement guide I used and tried to make sense of. (Note: this one doesn't discuss how to manually add a new material to a mesh)
 
