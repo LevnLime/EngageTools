@@ -19,9 +19,42 @@ For debugging purposes, you can add the verbse (-v) flag
 ```
 EngageBundleHelper.exe -c <JSON config file> -v
 ```
-The Config File is a JSON file with an Operation name and that operation's parameters. Operations are listed in the section below  
+The Config File is a JSON file with an Operation name and that operation's parameters. A list of operations (and detailed information about their parameters) are listed in the Operations section later in this README.  
 
 (Explanations are hard, so the easiest way to get started may be to go to the Quick Start section, which uses the SampleFiles that I've provided to run the basic (and hopefully most common) scenario.)
+
+# Quick Start
+I've provided a folder of SampleFiles that should help in completing the basic (and I'm hoping most common) scenario.
+### Example of basic scenario
+Suppose that you are trying to create your own [Lapis Midriff and Thighs](https://gamebanana.com/mods/423893) mod (not my mod, but I think it makes for a good tutorial).
+- You've already done Step 1 and exported Lapis's Dress and Skin meshes from Lapis's bundle (ubody_swd0af_c251.bundle)
+- You've already done Step 2 and used Blender to modify these meshes
+  - The Dress mesh was easy because you're just removing existing faces
+  - The Skin mesh, however, is not as straightforward. Lapis's Skin mesh just gives you her neck, so you'll need to get a midriff and thighs from somewhere else.
+    - A common source for female body parts is Zephia's Skin mesh (ubody_msn0df_c553.bundle) because it is the most complete. So you take a midriff and thighs from Zephia
+    - Now Lapis's Skin mesh has a midriff and thighs (in addition to the neck). Notice that the neck uses Lapis's original MtSkin material, but the midriff and thighs from Zephia uses a different MtSkin.001 material
+- You've already done Step 3 and had Unity build your updated mesh into a new Unity assets file (sharedassets0.assets)
+  - Important! You must append "_FIXED" to the names of your generated Skin and Dress meshes. (EngageBundleHelper will search for assets by partial name)
+  - In Unity, you may notice that it will say your Skin mesh has two "submeshes" (corresponding to the two Materials that that mesh uses)
+### EngageBundleHelper Usage for this example basic scenario
+1) Navigate to the SampleFiles folder that I've provided in command prompt.
+2) Copy Lapis's bundle (ubody_swd0af_c251.bundle) into this folder
+3) Copy the built Unity assets file (sharedassets0.assets) into this folder
+4) Run `EngageBundleHelper.exe -c UpdateMeshesFromNewAssets.json`
+    - Important! You must have previously appended "_FIXED" to the names of your generated Skin and Dress meshes in Unity before building the project. The provided sample UpdateMeshesFromNewAssets.json config file specifies "_FIXED" as the search term for finding meshes to export
+    - This will output a file named "updatedMeshesOutput.bundle"
+    - Note: If you get a message about "command not found", either provide a full absolute (or relative) path to the folder where EngageBundleHelper.exe resides, or add that folder to your PATH environment variable
+5) Run `EngageBundleHelper.exe -c AddNewMaterial.json`
+    - This will output a file named "output.bundle"
+6) Rename "output.bundle" to "ubody_swd0af_c251.bundle" and use that for your mod. You're good to go!
+
+### Description of SampleFiles files
+- The MtSkin_Material.json is the MtSkin material exported from Zephia's bundle (ubody_msn0df_c553.bundle)
+- The Albedo/Normal/Multi *_Texture.json files are exported (export as JSON) from Zephia's bundle (ubody_msn0df_c553.bundle)
+- The Albedo/Normal/Multi *_Texture.png files were originally exported (export texture) from Zephia's bundle, but have been modified for easier reuse
+- UpdateMeshesFromNewAssets.json is a config file for EngageBundlerHelper and is meant to be used first
+- AddNewMaterial.json is a config file for EngageBundlerHelper and is meant to be used second
+- classdata.tpk is needed by the UpdateMeshesFromNewAssets operation. (I couldn't figure out how to get the program to find the file more reliably, so I just stuck it in here)
 
 # Operations
 These are the operations that the tool currently supports
@@ -62,38 +95,6 @@ NormalTextureImageFileName | File name (or path) of the image file (likely PNG) 
 MultiTextureImageFileName | File name (or path) of the image file (likely PNG) of the Multi texture
 BasePath | (optional) This specifies a base path that relative path names (such as BundleFileName and all the texture file names) will be based off of. By default, BasePath is just the current directory
 OutputBundleFileName | The name of the bundle this operation outputs. Currently, this tool does not support updating the original bundle in place.
-
-# Quick Start
-I've provided a folder of SampleFiles that should help in completing the basic (and I'm hoping most common) scenario.
-### Example of basic scenario
-Suppose that you are trying to create your own [Lapis Midriff and Thighs](https://gamebanana.com/mods/423893) mod (not my mod, but I think it makes for a good tutorial).
-- You've already done Step 1 and exported Lapis's Dress and Skin meshes from Lapis's bundle (ubody_swd0af_c251.bundle)
-- You've already done Step 2 and used Blender to modify these meshes
-  - The Dress mesh was easy because you're just removing existing faces
-  - The Skin mesh, however, is not as straightforward. Lapis's Skin mesh just gives you her neck, so you'll need to get a midriff and thighs from somewhere else.
-    - A common source for female body parts is Zephia's Skin mesh (ubody_msn0df_c553.bundle) because it is the most complete. So you take a midriff and thighs from Zephia
-    - Now Lapis's Skin mesh has a midriff and thighs (in addition to the neck). Notice that the neck uses Lapis's original MtSkin material, but the midriff and thighs from Zephia uses a different MtSkin.001 material
-- You've already done Step 3 and had Unity build your updated mesh into a new Unity assets file (sharedassets0.assets)
-  - Important! You must append "_FIXED" to the names of your generated Skin and Dress meshes. (EngageBundleHelper will search for assets by partial name)
-  - In Unity, you may notice that it will say your Skin mesh has two "submeshes" (corresponding to the two Materials that that mesh uses)
-### EngageBundleHelper Usage for this example basic scenario
-1) Navigate to the SampleFiles folder that I've provided in command prompt.
-2) Copy Lapis's bundle (ubody_swd0af_c251.bundle) into this folder
-3) Copy the built Unity assets file (sharedassets0.assets) into this folder
-4) Run `EngageBundleHelper.exe -c UpdateMeshesFromNewAssets.json`
-    - This will output a file named "updatedMeshesOutput.bundle"
-    - Note: If you get a message about "command not found", either provide a full absolute (or relative) path to the folder where EngageBundleHelper.exe resides, or add that folder to your PATH environment variable
-5) Run `EngageBundleHelper.exe -c AddNewMaterial.json`
-    - This will output a file named "output.bundle"
-6) Rename "output.bundle" to "ubody_swd0af_c251.bundle" and use that for your mod. You're good to go!
-
-### Description of SampleFiles files
-- The MtSkin_Material.json is the MtSkin material exported from Zephia's bundle (ubody_msn0df_c553.bundle)
-- The Albedo/Normal/Multi *_Texture.json files are exported (export as JSON) from Zephia's bundle (ubody_msn0df_c553.bundle)
-- The Albedo/Normal/Multi *_Texture.png files were originally exported (export texture) from Zephia's bundle, but have been modified for easier reuse
-- UpdateMeshesFromNewAssets.json is a config file for EngageBundlerHelper and is meant to be used first
-- AddNewMaterial.json is a config file for EngageBundlerHelper and is meant to be used second
-- classdata.tpk is needed by the UpdateMeshesFromNewAssets operation. (I couldn't figure out how to get the program to find the file more reliably, so I just stuck it in here)
 
 # Libraries and References
 - [AssetsTools.NET](https://github.com/nesrak1/AssetsTools.NET) - The base library for interacting with Unity bundles. I'm using the v3 version.
