@@ -36,6 +36,11 @@ static void RunWithOptions(CommandLineOptions options)
 			AddNewMaterialOperation addNewMaterialOperation = new AddNewMaterialOperation(addNewMaterialParams);
 			addNewMaterialOperation.Execute();
 			break;
+		case "UpdateBonesFromNewAssets":
+			UpdateBonesFromNewAssetsOperationParams updateBonesParams = JsonConvert.DeserializeObject<UpdateBonesFromNewAssetsOperationParams>(fileContents);
+			UpdateBonesFromNewAssetsOperation updateBonesOperation = new UpdateBonesFromNewAssetsOperation(updateBonesParams);
+			updateBonesOperation.Execute();
+			break;
 		default:
 			throw new ArgumentException($"Invalid Operation: {config.Operation}");
 	}

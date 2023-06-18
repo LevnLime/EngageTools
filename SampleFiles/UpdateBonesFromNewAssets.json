@@ -1,0 +1,9 @@
+{
+    "Operation": "UpdateBonesFromNewAssets",
+
+    "BundleFileName": "base.bundle",
+    "NewAssetsFileName": "level0",
+    "RootBoneName": "uHair_h051h",
+    "BasePath": "",
+    "OutputBundleFileName": "updatedBonesOutput.bundle"
+}
