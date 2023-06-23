@@ -1,7 +1,9 @@
 ﻿using AssetsTools.NET;
 using AssetsTools.NET.Extra;
+using EngageBundleHelper.Models;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
 using System.Text;
@@ -23,9 +25,7 @@ namespace EngageBundleHelper.Operations
 		private class BoneStructureTreeNode
 		{
 			public required string Name { get; init; }
-			public required Vector3 Position { get; init; }
-			public required Vector4 Rotation { get; init; }
-			public required Vector3 Scale {  get; init; }
+			public required Transform Transform { get; init; }
 			public List<BoneStructureTreeNode> Children { get; } = new List<BoneStructureTreeNode>();
 		}
 
@@ -126,28 +126,20 @@ namespace EngageBundleHelper.Operations
 
 		static BoneStructureTreeNode generateBoneStructureTreeRecursive(AssetsManager assetsManager, AssetsFileInstance assetsFileInst, AssetTypeValueField currentTransformNode)
 		{
-			// Fetch information about this current asset
-			AssetTypeValueField positionData = currentTransformNode["m_LocalPosition"];
-			AssetTypeValueField rotationData = currentTransformNode["m_LocalRotation"];
-			AssetTypeValueField scaleData = currentTransformNode["m_LocalScale"];
-			AssetTypeValueField childrenData = currentTransformNode["m_Children"]["Array"];
-			AssetTypeValueField gameObject = getGameObjectFromTransform(assetsManager, assetsFileInst, currentTransformNode);
-			
+			// Get the information from this AssetTypeValueField node and put that information into a model that we can reuse later
+			AssetTypeValueField gameObject = getGameObjectFromTransform(assetsManager, assetsFileInst, currentTransformNode).baseField;
 			string name = gameObject["m_Name"].AsString;
-			Vector3 position = new Vector3(positionData["x"].AsFloat, positionData["y"].AsFloat, positionData["z"].AsFloat);
-			Vector4 rotation = new Vector4(rotationData["x"].AsFloat, rotationData["y"].AsFloat, rotationData["z"].AsFloat, rotationData["w"].AsFloat);
-			Vector3 scale = new Vector3(scaleData["x"].AsFloat, scaleData["y"].AsFloat, scaleData["z"].AsFloat);
+			Transform transform = Transform.CreateModelFromBaseField(currentTransformNode);
 
 			// Create a new tree node for this data
 			BoneStructureTreeNode currentTreeNode = new BoneStructureTreeNode()
 			{
 				Name = name,
-				Position = position,
-				Rotation = rotation,
-				Scale = scale
+				Transform = transform
 			};
 
 			// Recursively build the children subtrees
+			AssetTypeValueField childrenData = currentTransformNode["m_Children"]["Array"];
 			foreach (AssetTypeValueField child in childrenData)
 			{
 				// The children here are pointers to other Transform (PPtr<Transform>)
@@ -167,44 +159,30 @@ namespace EngageBundleHelper.Operations
 			Dictionary<string, BoneStructureTreeNode> newBoneDataMap,
 			List<AssetsReplacer> assetsReplacers)
 		{
-			AssetTypeValueField currentTransformNode = assetsManager.GetBaseField(assetsFileInst, currentTransformInfo);
+			AssetTypeValueField currentTransformBaseField = assetsManager.GetBaseField(assetsFileInst, currentTransformInfo);
 
-			// Fetch the fields from this current asset
-			AssetTypeValueField position = currentTransformNode["m_LocalPosition"];
-			AssetTypeValueField rotation = currentTransformNode["m_LocalRotation"];
-			AssetTypeValueField scale = currentTransformNode["m_LocalScale"];
-			AssetTypeValueField children = currentTransformNode["m_Children"]["Array"];
-			AssetTypeValueField gameObject = getGameObjectFromTransform(assetsManager, assetsFileInst, currentTransformNode);
+			// Fetch the Game Object that this transform is attached to so that we can get the name of the bone
+			AssetExternal gameObjectAssetExternal = getGameObjectFromTransform(assetsManager, assetsFileInst, currentTransformBaseField);
+			AssetTypeValueField gameObject = gameObjectAssetExternal.baseField;
 			string boneName = gameObject["m_Name"].AsString;
 
+			// Fetch the new bone data from our model
 			if (!newBoneDataMap.ContainsKey(boneName))
 			{
 				// If this bone is not in the set of new bones that Unity generated, just ignore
 				Debug.WriteLine($"Bone \"{boneName}\" from original bundle not found in new bone data. Ignoring...");
 				return;
 			}
-
 			BoneStructureTreeNode newBoneData = newBoneDataMap[boneName];
-			Vector3 newPosition = newBoneData.Position;
-			Vector4 newRotation = newBoneData.Rotation;
-			Vector3 newScale = newBoneData.Scale;
 
-			// Copy the new data over
-			position["x"].AsFloat = newPosition.X;
-			position["y"].AsFloat = newPosition.Y;
-			position["z"].AsFloat = newPosition.Z;
-			rotation["x"].AsFloat = newRotation.X;
-			rotation["y"].AsFloat = newRotation.Y;
-			rotation["z"].AsFloat = newRotation.Z;
-			rotation["w"].AsFloat = newRotation.W;
-			scale["x"].AsFloat = newScale.X;
-			scale["y"].AsFloat = newScale.Y;
-			scale["z"].AsFloat = newScale.Z;
+			// Copy the new data from the model over to the existing AssetTypeVlaueField base field node
+			Transform.UpdateBaseFieldFromModel(newBoneData.Transform, currentTransformBaseField);
 
 			// Add a new AssetsReplacer for all these changes
-			assetsReplacers.Add(new AssetsReplacerFromMemory(assetsFileInst.file, currentTransformInfo, currentTransformNode));
+			assetsReplacers.Add(new AssetsReplacerFromMemory(assetsFileInst.file, currentTransformInfo, currentTransformBaseField));
 
 			// Recursively traverse through the children
+			AssetTypeValueField children = currentTransformBaseField["m_Children"]["Array"];
 			foreach (AssetTypeValueField child in children)
 			{
 				// The children here are pointers to other Transform (PPtr<Transform>)
@@ -250,16 +228,15 @@ namespace EngageBundleHelper.Operations
 			return assetsManager.GetExtAsset(assetsFileInst, transformPPtr);
 		}
 
-		static AssetTypeValueField getGameObjectFromTransform(AssetsManager assetsManager, AssetsFileInstance assetsFileInst, AssetFileInfo assetInfo)
+		static AssetExternal getGameObjectFromTransform(AssetsManager assetsManager, AssetsFileInstance assetsFileInst, AssetFileInfo assetInfo)
 		{
 			AssetTypeValueField baseField = assetsManager.GetBaseField(assetsFileInst, assetInfo);
 			return getGameObjectFromTransform(assetsManager, assetsFileInst, baseField);
 		}
-		static AssetTypeValueField getGameObjectFromTransform(AssetsManager assetsManager, AssetsFileInstance assetsFileInst, AssetTypeValueField baseField)
+		static AssetExternal getGameObjectFromTransform(AssetsManager assetsManager, AssetsFileInstance assetsFileInst, AssetTypeValueField baseField)
 		{
 			AssetTypeValueField gameObjectPPtr = baseField["m_GameObject"];
-			AssetExternal gameObjectAssetExternal = assetsManager.GetExtAsset(assetsFileInst, gameObjectPPtr);
-			return gameObjectAssetExternal.baseField;
+			return assetsManager.GetExtAsset(assetsFileInst, gameObjectPPtr);
 		}
 
 		/// <summary>
