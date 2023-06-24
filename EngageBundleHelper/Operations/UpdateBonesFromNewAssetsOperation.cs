@@ -16,6 +16,7 @@ namespace EngageBundleHelper.Operations
 		public required string BundleFileName { get; init; }
 		public required string NewAssetsFileName { get; init; }
 		public required string RootBoneName { get; init; }
+		public bool ProcessSpringComponents { get; init; } = false;
 		public string BasePath { get; init; } = string.Empty;
 		public string OutputBundleFileName { get; init; } = "output.bundle";
 	}
@@ -26,6 +27,8 @@ namespace EngageBundleHelper.Operations
 		{
 			public required string Name { get; init; }
 			public required Transform Transform { get; init; }
+			public SpringBone? SpringBone { get; init; } = null;
+			public SpringJobManager? SpringJobManager { get; init; } = null;
 			public List<BoneStructureTreeNode> Children { get; } = new List<BoneStructureTreeNode>();
 		}
 
@@ -42,12 +45,12 @@ namespace EngageBundleHelper.Operations
 				Path.Combine(parameters.BasePath, parameters.BundleFileName),
 				Path.Combine(parameters.BasePath, parameters.NewAssetsFileName),
 				parameters.RootBoneName,
-				parameters.BasePath,
+				parameters.ProcessSpringComponents,
 				Path.Combine(parameters.BasePath, parameters.OutputBundleFileName)
 			);
 		}
 
-		public static void Execute(string bundleFileName, string newAssetsFileName, string rootBoneName, string basePath, string outputBundleFileName)
+		public static void Execute(string bundleFileName, string newAssetsFileName, string rootBoneName, bool processSpringComponents, string outputBundleFileName)
 		{
 			AssetsManager assetsManager = new AssetsManager();
 			BundleFileInstance bundleInst = assetsManager.LoadBundleFile(bundleFileName);
@@ -77,7 +80,7 @@ namespace EngageBundleHelper.Operations
 			AssetFileInfo rootBoneTransformInfo = getTransformFromGameObject(assetsManager, assetsFileInst, rootBoneInfo).info;
 
 			// Traverse the bone hierarchy, copying over new bone values and populated the list of AssetsReplacers
-			copyNewBoneDataRecursive(assetsManager, assetsFileInst, rootBoneTransformInfo, newBoneDataMap, assetsReplacers);
+			copyNewBoneDataRecursive(assetsManager, assetsFileInst, rootBoneTransformInfo, newBoneDataMap, processSpringComponents, assetsReplacers);
 
 			List<BundleReplacer> bundleReplacers = new List<BundleReplacer>
 			{
@@ -103,7 +106,16 @@ namespace EngageBundleHelper.Operations
 				Console.WriteLine("Error: classdata.tpk not found. Please copy this file from SampleFiles into your current directory.");
 				throw;
 			}
-			AssetsFileInstance newAssetsFileInst = assetsManager.LoadAssetsFile(newAssetsFileName, true /*loadDeps*/);
+			AssetsFileInstance newAssetsFileInst;
+			if (newAssetsFileName.EndsWith(".bundle"))
+			{
+				BundleFileInstance bundleInst = assetsManager.LoadBundleFile(newAssetsFileName);
+				newAssetsFileInst = assetsManager.LoadAssetsFileFromBundle(bundleInst, 0, true /*loadDeps*/);
+			}
+			else
+			{
+				newAssetsFileInst = assetsManager.LoadAssetsFile(newAssetsFileName, true /*loadDeps*/);
+			}
 			AssetsFile newAssetsFile = newAssetsFileInst.file;
 			assetsManager.LoadClassDatabaseFromPackage(newAssetsFile.Metadata.UnityVersion);
 
@@ -130,12 +142,15 @@ namespace EngageBundleHelper.Operations
 			AssetTypeValueField gameObject = getGameObjectFromTransform(assetsManager, assetsFileInst, currentTransformNode).baseField;
 			string name = gameObject["m_Name"].AsString;
 			Transform transform = Transform.CreateModelFromBaseField(currentTransformNode);
+			(SpringBone? springBone, SpringJobManager? springJobManager) = SpringBones.CreateModelFromBaseField(assetsManager, assetsFileInst, gameObject);
 
 			// Create a new tree node for this data
 			BoneStructureTreeNode currentTreeNode = new BoneStructureTreeNode()
 			{
 				Name = name,
-				Transform = transform
+				Transform = transform,
+				SpringBone = springBone,
+				SpringJobManager = springJobManager
 			};
 
 			// Recursively build the children subtrees
@@ -157,14 +172,14 @@ namespace EngageBundleHelper.Operations
 			AssetsFileInstance assetsFileInst,
 			AssetFileInfo currentTransformInfo,
 			Dictionary<string, BoneStructureTreeNode> newBoneDataMap,
+			bool processSpringComponents,
 			List<AssetsReplacer> assetsReplacers)
 		{
 			AssetTypeValueField currentTransformBaseField = assetsManager.GetBaseField(assetsFileInst, currentTransformInfo);
 
 			// Fetch the Game Object that this transform is attached to so that we can get the name of the bone
-			AssetExternal gameObjectAssetExternal = getGameObjectFromTransform(assetsManager, assetsFileInst, currentTransformBaseField);
-			AssetTypeValueField gameObject = gameObjectAssetExternal.baseField;
-			string boneName = gameObject["m_Name"].AsString;
+			AssetExternal gameObject = getGameObjectFromTransform(assetsManager, assetsFileInst, currentTransformBaseField);
+			string boneName = gameObject.baseField["m_Name"].AsString;
 
 			// Fetch the new bone data from our model
 			if (!newBoneDataMap.ContainsKey(boneName))
@@ -176,7 +191,13 @@ namespace EngageBundleHelper.Operations
 			BoneStructureTreeNode newBoneData = newBoneDataMap[boneName];
 
 			// Copy the new data from the model over to the existing AssetTypeVlaueField base field node
-			Transform.UpdateBaseFieldFromModel(newBoneData.Transform, currentTransformBaseField);
+			newBoneData.Transform.UpdateBaseFieldFromModel(currentTransformBaseField);
+
+			// Copy data from Spring components (SpringBone, SpringJobManager) if enabled
+			if (processSpringComponents)
+			{
+				handleSpringComponentCopy(assetsManager, assetsFileInst, gameObject, newBoneData, assetsReplacers);
+			}
 
 			// Add a new AssetsReplacer for all these changes
 			assetsReplacers.Add(new AssetsReplacerFromMemory(assetsFileInst.file, currentTransformInfo, currentTransformBaseField));
@@ -188,8 +209,58 @@ namespace EngageBundleHelper.Operations
 				// The children here are pointers to other Transform (PPtr<Transform>)
 				AssetExternal childAssetExt = assetsManager.GetExtAsset(assetsFileInst, child);
 				AssetFileInfo childTransformInfo = childAssetExt.info;
-				copyNewBoneDataRecursive(assetsManager, assetsFileInst, childTransformInfo, newBoneDataMap, assetsReplacers);
+				copyNewBoneDataRecursive(assetsManager, assetsFileInst, childTransformInfo, newBoneDataMap, processSpringComponents, assetsReplacers);
 			}
+		}
+
+		static void handleSpringComponentCopy(
+			AssetsManager assetsManager,
+			AssetsFileInstance assetsFileInst,
+			AssetExternal gameObject,
+			BoneStructureTreeNode newBoneData,
+			List<AssetsReplacer> assetsReplacers
+			)
+		{
+			AssetTypeValueField gameObjectComponents = gameObject.baseField["m_Component"]["Array"];
+			bool currentGameObjectHasSpringComponent = gameObjectComponents.Children.Count > 1;    // Assume Spring component will be the second component
+			bool newBoneDataModelHasSpringComponent = (newBoneData.SpringBone != null) || (newBoneData.SpringJobManager != null);
+
+			if (!currentGameObjectHasSpringComponent && !newBoneDataModelHasSpringComponent)
+			{
+				// No Spring component both before and after. Nothing to do here
+				return;
+			}
+			else if (currentGameObjectHasSpringComponent && !newBoneDataModelHasSpringComponent)
+			{
+				// Remove the current object's Spring component
+				// Assumes the Spring component will be the second component
+				gameObjectComponents.Children.RemoveAt(1);
+				assetsReplacers.Add(new AssetsReplacerFromMemory(assetsFileInst.file, gameObject.info, gameObject.baseField));
+				return;
+			}
+			else if (!currentGameObjectHasSpringComponent && newBoneDataModelHasSpringComponent)
+			{
+				// In this case, we'd need to add a Spring component to this game object that didn't previously have a Spring component
+				// This scenario is currently not supported
+				Debug.WriteLine($"Bone {gameObject.baseField["m_Name"]}: Did not add a new SpringBone/SpringJobManager to this game object because this is not yet supported");
+				return;
+			}
+
+			// Both game object and new bone data have a Spring component, so we just need to copy the data over
+			// Note: We do not currently support changing a SpringBone to a SpringJobManager or vis-versa
+			AssetTypeValueField springComponentPPtr = gameObjectComponents[1]["component"];
+			AssetExternal springComponent = assetsManager.GetExtAsset(assetsFileInst, springComponentPPtr);
+
+			if (newBoneData.SpringBone != null)
+			{
+				newBoneData.SpringBone.UpdateBaseFieldFromModel(springComponent.baseField);
+			}
+			else if (newBoneData.SpringJobManager != null)
+			{
+				newBoneData.SpringJobManager.UpdateBaseFieldFromModel(springComponent.baseField);
+			}
+
+			assetsReplacers.Add(new AssetsReplacerFromMemory(assetsFileInst.file, springComponent.info, springComponent.baseField));
 		}
 
 		// Given a GameObject, returns this GameObject's Transform component's BaseField

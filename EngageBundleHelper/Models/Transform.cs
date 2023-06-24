@@ -36,11 +36,11 @@ namespace EngageBundleHelper.Models
 			};
 		}
 
-		public static void UpdateBaseFieldFromModel(Transform model, AssetTypeValueField baseField)
+		public void UpdateBaseFieldFromModel(AssetTypeValueField baseField)
 		{
-			Vector3 newPosition = model.Position;
-			Vector4 newRotation = model.Rotation;
-			Vector3 newScale = model.Scale;
+			Vector3 newPosition = Position;
+			Vector4 newRotation = Rotation;
+			Vector3 newScale = Scale;
 
 			AssetTypeValueField position = baseField["m_LocalPosition"];
 			AssetTypeValueField rotation = baseField["m_LocalRotation"];

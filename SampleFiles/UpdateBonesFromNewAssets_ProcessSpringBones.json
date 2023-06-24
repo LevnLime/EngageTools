@@ -1,0 +1,10 @@
+{
+    "Operation": "UpdateBonesFromNewAssets",
+
+    "BundleFileName": "base.bundle",
+    "NewAssetsFileName": "output_name.bundle",
+    "RootBoneName": "uHair_h051h",
+    "ProcessSpringComponents": true,
+    "BasePath": "",
+    "OutputBundleFileName": "updatedBonesOutput.bundle"
+}
