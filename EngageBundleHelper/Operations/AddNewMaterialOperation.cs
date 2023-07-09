@@ -27,11 +27,15 @@ namespace EngageBundleHelper.Operations
 		public string BasePath { get; init; } = string.Empty;
 		public string OutputBundleFileName { get; init; } = "output.bundle";
 		/// <summary>
-		///  This is the material that will be used to get a pointer to the Shader that will be used for the new material we're adding.
+		///  This is the material that will be used to copy some data from when creating the new material. Specifically, we will be copying the following:
+		///    1) pointer to the Shader
+		///    2) pointer to the _ToonRamp texture
+		///  Notes:
 		///  From very limited testing, it looks like MtSkin and MtDress both use the same Shader, but MtShadow uses a different shader.
-		///  We generally want to use the one from MtSkin/MtDress
+		///  We generally want to use the one from MtSkin/MtDress.
+		///  From testing, it has also been observed that MtDress and MtSkin may use a different _ToonRamp texture
 		/// </summary>
-		public string ShaderSourceMaterialName { get; init; } = "MtDress";
+		public string SourceMaterialName { get; init; } = "MtDress";
 	}
 	public class AddNewMaterialOperation
 	{
@@ -56,7 +60,7 @@ namespace EngageBundleHelper.Operations
 				Path.Combine(parameters.BasePath, parameters.NormalTextureJsonFileName),
 				Path.Combine(parameters.BasePath, parameters.MultiTextureJsonFileName),
 				tempBundlePath,
-				parameters.ShaderSourceMaterialName
+				parameters.SourceMaterialName
 			);
 			Debug.WriteLine($"Done adding new material and textures (JSON only) to bundle (and adjusting pointers).");
 
@@ -98,19 +102,25 @@ namespace EngageBundleHelper.Operations
 			{
 				throw new Exception($"Unable to find original {shaderSourceMaterialName} material to get the shader from");
 			}
-			AssetTypeValueField rootNode = assetsManager.GetBaseField(assetsFileInst, materialInfo);
-			AssetTypeValueField shaderElem = rootNode["m_Shader"];
-			int shaderFileId = shaderElem.Children[0].AsInt;
-			long shaderPathId = shaderElem.Children[0].AsLong;
+			AssetTypeValueField materialBaseField = assetsManager.GetBaseField(assetsFileInst, materialInfo);
+			AssetTypeValueField shaderPointer = materialBaseField["m_Shader"];
 
 			// Add all three textures files
 			Dictionary<string, long> newTexturePathIds;
 			List<AssetsReplacer> textureReplacers = addTextureAssets(assetsManager, assetsFileInst, albedoTextureJsonFile, normalTextureJsonFile, multiTextureJsonFile, out newTexturePathIds);
 			assetsReplacers.AddRange(textureReplacers);
 
+			// There's actually one more important texture -- _ToonRamp
+			// This one is different from the others in that it does not live in this bundle. I think that most models share from a set of common _ToonRamp textures
+			// The actual location these _ToonRamp textures lives is somewhere in Data\StreamingAssets\aa\Switch\fe_assets_unit\model\common
+			// But bundles will just use a pointer to that. The PathID of the certain _ToonRamp textures are static. For example MtSkin should be -914440881901598052
+			// However, the FileID may differ from bundle to bundle because the order of the dependencies may be different.
+			// Therefore, similar to how we found the existing Shader to reuse, we need to also find the existing _ToonRamp pointer and reuse that
+			AssetTypeValueField toonRampPointer = getToonRampPointerFromMaterial(materialBaseField);
+
 			// Modify the material JSON file to enter in the Shader and texture paths values
 			// Create a new Material asset to import into
-			string fixedNewMaterialTempFileName = writeMaterialInfoToFile(newMaterialFileName, shaderElem, newTexturePathIds);
+			string fixedNewMaterialTempFileName = writeMaterialInfoToFile(newMaterialFileName, shaderPointer, newTexturePathIds, toonRampPointer);
 			AssetsReplacer newMaterialReplacer = addTextureAsset(assetsManager, assetsFileInst, materialInfo, fixedNewMaterialTempFileName, out long newMaterialPathId);
 			assetsReplacers.Add(newMaterialReplacer);
 			Debug.WriteLine("Created new Material asset");
@@ -310,14 +320,14 @@ namespace EngageBundleHelper.Operations
 				  }
 				},
 		*/
-		string writeMaterialInfoToFile(string fileName, AssetTypeValueField shaderElem, Dictionary<string, long> newTexturePathIds)
+		string writeMaterialInfoToFile(string fileName, AssetTypeValueField shaderPointer, Dictionary<string, long> newTexturePathIds, AssetTypeValueField toonRampPointer)
 		{
 			string fileContents = File.ReadAllText(fileName);
 			JToken rootToken = JToken.Parse(fileContents);
 
 			// Point the Shader at the existing one
-			rootToken["m_Shader"]["m_FileID"] = shaderElem.Children[0].AsInt;
-			rootToken["m_Shader"]["m_PathID"] = shaderElem.Children[1].AsLong;
+			rootToken["m_Shader"]["m_FileID"] = shaderPointer.Children[0].AsInt;
+			rootToken["m_Shader"]["m_PathID"] = shaderPointer.Children[1].AsLong;
 
 			// Modify the texture pointers to point to the correct textures
 			JToken texEnvsArray = rootToken["m_SavedProperties"]["m_TexEnvs"]["Array"];
@@ -331,11 +341,28 @@ namespace EngageBundleHelper.Operations
 					long pathId = newTexturePathIds[textureName];
 					textureInfo["second"]["m_Texture"]["m_PathID"] = pathId;
 				}
+				else if (textureName == "_ToonRamp")
+				{
+					// Point the ToonRamp texture at the existing one
+					textureInfo["second"]["m_Texture"]["m_FileID"] = toonRampPointer["m_FileID"].AsInt;
+					textureInfo["second"]["m_Texture"]["m_PathID"] = toonRampPointer["m_PathID"].AsLong;
+				}
 			}
 
 			string outputFileName = fileName + ".mod";
 			File.WriteAllText(outputFileName, rootToken.ToString());
 			return outputFileName;
+		}
+
+		AssetTypeValueField getToonRampPointerFromMaterial(AssetTypeValueField materialBaseField)
+		{
+			AssetTypeValueField texturesArray = materialBaseField["m_SavedProperties"]["m_TexEnvs"]["Array"];
+			AssetTypeValueField? toonRampEntry = texturesArray.Children.Find(textureInfo => textureInfo["first"].AsString == "_ToonRamp");
+			if (toonRampEntry == null)
+			{
+				throw new Exception($"Unable to find _ToonRamp info for material {materialBaseField["m_Name"].AsString}");
+			}
+			return toonRampEntry["second"]["m_Texture"];
 		}
 
 		AssetsReplacer addMaterialToSkinnedMeshRenderer(AssetsManager assetsManager, AssetsFileInstance assetsFileInst, long meshPathId, long newMaterialPathId)

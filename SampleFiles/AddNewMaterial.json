@@ -3,6 +3,7 @@
 
     "BundleFileName": "updatedMeshesOutput.bundle",
     "MeshName": "_Skin",
+	"SourceMaterialName": "MtSkin",
     "NewMaterialFileName": "MtSkin_Material.json",
     "AlbedoTextureJsonFileName": "Albedo_Texture.json",
 	"NormalTextureJsonFileName": "Normal_Texture.json",
