@@ -1,0 +1,14 @@
+version,4
+
+[SpringBones]
+// bone,radius,stiffnessForce,dragForce,springForce x,springForce y,springForce z,wind influence,pivot node,use y angle limit,y angle min,y angle max,use z angle limit,z angle min,z angle max,angle stiffness,length limit count,length limit target,length limit ratio x N,collider x N
+l_bust_jig,0.05,0.01,0.01,0,-0.0001,0,1,l_bust_jig_Pivot,True,-45,45,True,-45,45,1,0
+r_bust_jig,0.05,0.01,0.01,0,-0.0001,0,1,r_bust_jig_Pivot,True,-45,45,True,-45,45,1,0
+
+[Pivots]
+// PivotName,ParentName,local rotation x,y,z
+l_bust_jig_Pivot,c_jig_manager,0,90,277.133
+r_bust_jig_Pivot,c_jig_manager,0,90,277.133
+[SpringJobManager]
+isPaused,simulationFrameRate,dynamicRatio,gravity x,gravity y,gravity z,bounce,friction,enableAngleLimits,enableCollision,enableLengthLimits,collideWithGround,groundHeight,windDisabled,windInfluence,windPower x,windPower y,windPower z,windDir x,windDir y,windDir z,distanceRate x,distanceRate y,distanceRate z,automaticReset,resetDistance,resetAngle
+False,60,1,0,-10,0,0,1,True,True,True,False,0,False,1,0,0,0,0,0,0,0,0,0,True,1,60
